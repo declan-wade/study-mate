@@ -47,6 +47,9 @@ export default function Home() {
   const [subject, setSubject] = React.useState("")
   const { isOpen, onOpen, onOpenChange, onClose } = useDisclosure();
   const [dueDate, setDueDate] = React.useState<Date | undefined>(new Date());
+  const [numDueThisWeek, setNumDueThisWeek] = React.useState(0);
+  const [numCompleteTasks, setNumCompleteTasks] = React.useState(0);
+  const [numOverdueTasks, setNumOverdueTasks] = React.useState(0);
 
   const [show, setShow] = React.useState(false)
   
@@ -59,21 +62,24 @@ export default function Home() {
 		setShow(state)
 	}
 
-  function countTasksDueThisWeek(data: any) {
+  function countTasksDueThisWeek() {
     const today = new Date();
     const startOfWeekDate = startOfWeek(today);
     const endOfWeekDate = endOfWeek(today);
-    return data.filter((task: any) => isWithinInterval(task.duedate, { start: startOfWeekDate, end: endOfWeekDate })).length;
+    const x = data.filter((task: any) => isWithinInterval(task.duedate, { start: startOfWeekDate, end: endOfWeekDate })).length;
+    setNumDueThisWeek(x)
   }
 
-  function countCompleteTasks(data: any) {
-    return data.filter((task: any) => task.complete).length;
+  function countCompleteTasks() {
+   const x = data.filter((task: any) => task.complete).length;
+   setNumCompleteTasks(x)
   }
   
   // Function to count the number of overdue tasks
-  function countOverdueTasks(data: any) {
+  function countOverdueTasks() {
     const today = new Date();
-    return data.filter((task: any) => isPast(task.duedate) && !task.complete).length;
+    const x = data.filter((task: any) => isPast(task.duedate) && !task.complete).length;
+    setNumOverdueTasks(x)
   }
 
   const subjects = [
@@ -86,12 +92,12 @@ export default function Home() {
       value: "ELACS",
     },
     {
-      label: "Business Management",
-      value: "Business Management",
+      label: "BM",
+      value: "BM",
     },
     {
-      label: "Economics",
-      value: "Economics",
+      label: "Econs",
+      value: "Econs",
     }
   ];
 
@@ -158,15 +164,20 @@ export default function Home() {
 
   React.useEffect(() => {
     handleGetData();
+    countTasksDueThisWeek();
+    countCompleteTasks();
+    countOverdueTasks();
   }, []);
+
+  React.useEffect(() => {
+    countTasksDueThisWeek();
+    countCompleteTasks();
+    countOverdueTasks();
+  }, [data]);
 
   const topContent = React.useMemo(() => {
     return (
-      <div className="flex flex-col gap-3 mt-3">
-        <div className="flex justify-between gap-3 items-end">
-        <Chip color="warning"variant="flat" radius="sm">Due This Week: {countTasksDueThisWeek(data)}</Chip>
-        <Chip color="danger" variant="flat" radius="sm">Overdue: {countOverdueTasks(data)}</Chip>
-        <Chip color="success" variant="flat" radius="sm">Complete: {countCompleteTasks(data)}</Chip>
+      <div className="flex flex-col gap-3 mt-3 ms-3 me-3">
         <Button
           className="bg-foreground text-background"
           endContent={<Plus />}
@@ -176,7 +187,6 @@ export default function Home() {
           Add New
         </Button>
         </div>
-      </div>
     );
   }, []);
 
@@ -228,6 +238,11 @@ export default function Home() {
           )}
         </ModalContent>
       </Modal>
+      <div className="flex justify-between gap-3 mt-5 ms-3 me-3 items-end">
+        <Chip color="warning"variant="flat" radius="sm">Due This Week: {numDueThisWeek}</Chip>
+        <Chip color="danger" variant="flat" radius="sm">Overdue: {numOverdueTasks}</Chip>
+        <Chip color="success" variant="flat" radius="sm">Complete: {numCompleteTasks}</Chip>
+      </div>
       <Table
         isCompact
         removeWrapper
@@ -256,7 +271,7 @@ export default function Home() {
                   <TableCell className={item.complete ? 'text-muted-foreground line-through' : ''}>{item.subject}</TableCell>
                   <TableCell>
                     <Chip className="capitalize" color={item.complete ? "success" : "danger"} size="sm" variant="flat">
-                  {item.complete ? "Complete" : "Incomplete"}
+                  {item.complete ? "Done" : "Doing"}
                 </Chip>
                   </TableCell>
                   <TableCell className={item.complete ? 'text-muted-foreground line-through' : ''}>
